@@ -39,6 +39,7 @@ var mod = function (a, n) {
     return (a % n + n) %n;
 };
 
+////////////////////////////////////////////////////////////////////////
 // Camera
 ////////////////////////////////////////////////////////////////////////
 var Camera = function (x, y, z, yaw) {
@@ -117,6 +118,12 @@ Point.prototype.project = function () {
     }
 };
 
+Point.prototype.translate = function (dx, dy, dz) {
+    this.x += dx;
+    this.y += dy;
+    this.z += dz;
+};
+
 ////////////////////////////////////////////////////////////////////////
 // Edge
 ////////////////////////////////////////////////////////////////////////
@@ -164,6 +171,10 @@ Shape.prototype.draw = function () {
     ctx.shadowColor = ctx.strokeStyle;
     this.vertices.map(function (v) {v.project();});
     this.edges.map(function (e) {e.draw();});
+};
+
+Shape.prototype.translate = function (dx, dy, dz) {
+    this.vertices.map(function (v) {v.translate(dx, dy, dz);});
 };
 
 ////////////////////////////////////////////////////////////////////////

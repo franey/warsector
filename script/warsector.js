@@ -3,6 +3,7 @@ var keysToCapture, keysDown;
 var canvas, ctx;
 var camera;
 var cube, pyramid;
+var cubes, pyramids;
 
 ////////////////////////////////////////////////////////////////////////
 // A note on co-ordinate systems
@@ -178,6 +179,59 @@ Shape.prototype.translate = function (dx, dy, dz) {
 };
 
 ////////////////////////////////////////////////////////////////////////
+// Cube
+////////////////////////////////////////////////////////////////////////
+var Cube = function (x, y) {
+    var that = this;
+    var vertices = [[0, 400, 400], [400, 400, 400],
+                    [0, 400,   0], [400, 400,   0],
+                    [0,   0, 400], [400,   0, 400],
+                    [0,   0,   0], [400,   0,   0]];
+
+    var edges = [[0, 1], [0, 2], [0, 4],
+                 [3, 1], [3, 2], [3, 7],
+                 [5, 1], [5, 4], [5, 7],
+                 [6, 2], [6, 4], [6, 7]];
+
+    this.vertices = vertices.map(function (v) {
+            return new Point(v[0], v[1], v[2]);
+    });
+
+    this.edges = edges.map(function (e) {
+            return new Edge(that.vertices[e[0]], that.vertices[e[1]]);
+    });
+
+    this.translate(x, y, 0);
+};
+
+Cube.prototype = new Shape();
+
+////////////////////////////////////////////////////////////////////////
+// Pyramid
+////////////////////////////////////////////////////////////////////////
+var Pyramid = function (x, y) {
+    var that = this;
+    var vertices = [[200, 200, 400],
+                    [0, 400,   0], [400, 400,   0],
+                    [0,   0,   0], [400,   0,   0]];
+
+    var edges = [[0, 1], [0, 2], [0, 3], [0, 4],
+                 [1, 2], [2, 4], [4, 3], [3, 1]];
+
+    this.vertices = vertices.map(function (v) {
+            return new Point(v[0], v[1], v[2]);
+    });
+
+    this.edges = edges.map(function (e) {
+            return new Edge(that.vertices[e[0]], that.vertices[e[1]]);
+    });
+
+    this.translate(x, y, 0);
+};
+
+Pyramid.prototype = new Shape();
+
+////////////////////////////////////////////////////////////////////////
 // Misc
 ////////////////////////////////////////////////////////////////////////
 var drawHorizon = function () {
@@ -241,8 +295,13 @@ var render = function () {
     drawSight();
 
     // draw shapes
-    cube.draw();
-    pyramid.draw();
+    for (var i = 0; i < cubes.length; i++) {
+        cubes[i].draw();
+    }
+
+    for (var i = 0; i < cubes.length; i++) {
+        pyramids[i].draw();
+    }
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -296,21 +355,25 @@ var init = function () {
 
     camera = new Camera(0, 0, 200, 0);
 
-    cube = new Shape([[2400, 800, 400], [2400, 400, 400],
-                      [2400, 800,   0], [2400, 400,   0],
-                      [2000, 800, 400], [2000, 400, 400],
-                      [2000, 800,   0], [2000, 400,   0]],
-                     [[0, [1, 2, 4]],
-                      [3, [1, 2, 7]],
-                      [5, [1, 4, 7]],
-                      [6, [2, 4, 7]]]);
+    //cube = new Cube(4000, 3000);
+    cubes = [new Cube(0, 3000),
+             new Cube(2000, 0),
+             new Cube(0, -1000),
+             new Cube(-4000, 0)];
 
-    pyramid = new Shape([[3200, -700, 400],
-                         [3400, -500, 0], [3400, -900, 0],
-                         [3000, -500, 0], [3000, -900, 0]],
-                        [[0, [1, 2, 3, 4]],
-                         [1, [2, 3]],
-                         [4, [2, 3]]]);
+    pyramids = [new Pyramid(2000, 2000),
+                new Pyramid(3000, -3000),
+                new Pyramid(-4000, -4000),
+                new Pyramid(-1500, 1500)];
+
+    //pyramid = new Pyramid(3000, -900);
+
+    //pyramid = new Shape([[3200, -700, 400],
+                         //[3400, -500, 0], [3400, -900, 0],
+                         //[3000, -500, 0], [3000, -900, 0]],
+                        //[[0, [1, 2, 3, 4]],
+                         //[1, [2, 3]],
+                         //[4, [2, 3]]]);
 
     Camera.angularSpeed = Math.PI/3;
     Camera.focalLength = canvas.width/2;

@@ -2,7 +2,35 @@ var then;
 var keysToCapture, keysDown;
 var canvas, ctx;
 var camera;
-var cube;
+var cube, pyramid;
+
+////////////////////////////////////////////////////////////////////////
+// A note on co-ordinate systems
+// =====================================================================
+// The playing area is mapped out on a right-handed co-ordinate system, 
+// where the x axis points due 'east', the y axis due 'north', and the 
+// z axis straight up.
+//
+// In keeping with trigonometric norms, an angle of 0 degrees/radians 
+// points straight along the x-axis.
+//
+// When projecting on to the screen, however, we need to project on to a
+// system where the x-axis goes from left to right, but the y-axis goes
+// from top to bottom (and the virtual z-axis goes into the screen).
+//
+// As we effectively rotate the whole scene relative to the camera, this
+// means we:
+//
+// - project the camera's y-axis to the screen's x-axis, inversely
+//   (because at 0°/radians, points with a positive dy appear to the
+//   left and those with a negative dy appear to the right)
+//
+// - project the camera's z-axis to the screen's y-axis, again inversely
+//   (high dz appears at the top, low dz at the bottom)
+//
+// - project the camera's x-axis to the screen's virtual z-axis, this
+//   time directly (high dx appears further away)
+////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////
 // Utilities
@@ -11,7 +39,6 @@ var mod = function (a, n) {
     return (a % n + n) %n;
 };
 
-////////////////////////////////////////////////////////////////////////
 // Camera
 ////////////////////////////////////////////////////////////////////////
 var Camera = function (x, y, z, yaw) {
@@ -29,8 +56,8 @@ Camera.prototype.move = function (seconds, direction) {
         distance *= -1;
     }
 
-    this.x += distance * Math.cos(this.yaw+Math.PI/2);
-    this.z += distance * Math.sin(this.yaw+Math.PI/2);
+    this.x += distance * Math.cos(this.yaw);
+    this.y += distance * Math.sin(this.yaw);
 };
 
 Camera.prototype.turn = function (seconds, direction) {
@@ -45,15 +72,18 @@ Camera.prototype.turn = function (seconds, direction) {
 };
     
 Camera.prototype.updateTransform = function () {
+    var cos = Math.cos(-this.yaw);
+    var sin = Math.sin(-this.yaw);
+
     this.transform = function (point) {
         var dx = point.x - this.x;
         var dy = point.y - this.y;
         var dz = point.z - this.z;
         var transformed = new Point();
 
-        transformed.x = dx*Math.cos(-this.yaw) - dz*Math.sin(-this.yaw);
-        transformed.y = dy;
-        transformed.z = dz*Math.cos(-this.yaw) + dx*Math.sin(-this.yaw);
+        transformed.x = dx*cos - dy*sin;
+        transformed.y = dy*cos + dx*sin;
+        transformed.z = dz;
 
         return transformed;
     };
@@ -73,13 +103,13 @@ Point.prototype.project = function () {
     var zScale;
     var dx, dy;
 
-    if (transformed.z > 0) {
-        zScale = Camera.focalLength / transformed.z;
-        dx = transformed.x * zScale;
-        dy = transformed.y * zScale;
+    if (transformed.x > 0) {
+        zScale = Camera.focalLength / transformed.x;
+        dx = transformed.y * zScale;
+        dy = transformed.z * zScale;
 
         this.projection = {
-            x: canvas.width/2    + dx,
+            x: canvas.width/2    - dx,
             y: canvas.height*2/3 - dy
         };
     } else {
@@ -154,7 +184,7 @@ var drawHUD = function () {
     ctx.strokeStyle = "#ff0022";
     ctx.shadowColor = ctx.strokeStyle;
     ctx.strokeText("x: " + Math.floor(camera.x) +
-            "  z: " + Math.floor(camera.z) +
+            "  y: " + Math.floor(camera.y) +
             "  yaw: " + Math.floor(mod(360 - camera.yaw*180/Math.PI, 360)) + "°",
             32, 32);
 };
@@ -253,20 +283,20 @@ var init = function () {
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
 
-    camera = new Camera(0, 200, 0, 0);
+    camera = new Camera(0, 0, 200, 0);
 
-    cube = new Shape([[200, 400, 2000], [600, 400, 2000],
-                      [200,   0, 2000], [600,   0, 2000],
-                      [200, 400, 1600], [600, 400, 1600],
-                      [200,   0, 1600], [600,   0, 1600]],
+    cube = new Shape([[2400, 800, 400], [2400, 400, 400],
+                      [2400, 800,   0], [2400, 400,   0],
+                      [2000, 800, 400], [2000, 400, 400],
+                      [2000, 800,   0], [2000, 400,   0]],
                      [[0, [1, 2, 4]],
                       [3, [1, 2, 7]],
                       [5, [1, 4, 7]],
                       [6, [2, 4, 7]]]);
 
-    pyramid = new Shape([[-5300, 400, 6200],
-                         [-5500,   0, 6400], [-5100,   0, 6400],
-                         [-5500,   0, 6000], [-5100,   0, 6000]],
+    pyramid = new Shape([[3200, -700, 400],
+                         [3400, -500, 0], [3400, -900, 0],
+                         [3000, -500, 0], [3000, -900, 0]],
                         [[0, [1, 2, 3, 4]],
                          [1, [2, 3]],
                          [4, [2, 3]]]);
